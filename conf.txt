@@ -1,0 +1,31 @@
+Se extraerá el contenido de cada variable que esté un salto más abajo que su nombre.
+
+Conexión con tablas:
+user=
+root
+pass=
+ovdas123
+db=
+ufro_ovdas_prueba4
+host=
+172.16.45.39:3306
+
+Conexión con trazas:
+hostWWS=
+172.16.45.30
+portWWS=
+19385
+
+Tiempos de analisis
+Fechas a analizar (formato yyyy-mm-dd HH:MM:SS.FFF):
+inicio=
+2022-03-02 00:00:00.000
+fin=
+2022-03-03 00:00:00.000
+Segundos para considerar un macro evento
+macro_sec=
+4
+Estaciones válidas
+En formato XXX,XXX,XXX
+est_val=
+FRE,FU2,LBN,PLA,SHG,CHS,NBL,CHA,PHI
