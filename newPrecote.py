@@ -31,23 +31,23 @@ def waveP(y):
     wl=400
     lim_inf=.05
     y_ef=y
-    LV=np.array([max(abs(y_ef[i-wl:i])) for i in range(wl+1,len(y_ef)-ws)])
-    RV=np.array([max(abs(y_ef[i:i+ws])) for i in range(wl+1,len(y_ef)-ws)])
+    LV=numpy.array([max(abs(y_ef[i-wl:i])) for i in range(wl+1,len(y_ef)-ws)])
+    RV=numpy.array([max(abs(y_ef[i:i+ws])) for i in range(wl+1,len(y_ef)-ws)])
     stmltm=RV/(LV+lim_inf)
-    i=np.argwhere(np.array(stmltm)==max(stmltm))
+    i=numpy.argwhere(numpy.array(stmltm)==max(stmltm))
     return i[-1]
 
 def waveS(y):
     fs=100
-    f, t, Sxx = signal.spectrogram(y, fs,nperseg=300,noverlap=299)
+    f, t, Sxx = signal.spectrogram(y, fs,numpyerseg=300,noverlap=299)
     S=pow(abs(Sxx),2)
 
     Sn=(S-S.min())/(S.max()-S.min());
-    #Sn_db=10*np.log10(Sn);
+    #Sn_db=10*numpy.log10(Sn);
     u=Sn.mean()
     B=Sn>=u
     Su=Sn*B
-    #Su_db=10*np.log10(Su)
+    #Su_db=10*numpy.log10(Su)
 
     K=len(f)
     Ev=Su.sum(axis=0)
@@ -59,14 +59,14 @@ def waveS(y):
     SE=vn*Evn
     SEm=SE/SE.max()
 
-    p=np.cumsum(SE)/SE.sum()
+    p=numpy.cumsum(SE)/SE.sum()
     p_f= gaussian_filter1d(p, 25)
 
-    p_d=np.gradient(p_f)
-    p_dd=np.gradient(p_d)
+    p_d=numpy.gradient(p_f)
+    p_dd=numpy.gradient(p_d)
 
-    i=np.argwhere(np.array(p_dd)==max(p_dd))
-    ts=np.round(t[i[-1]]*100)
+    i=numpy.argwhere(numpy.array(p_dd)==max(p_dd))
+    ts=numpy.round(t[i[-1]]*100)
     return ts
 
 
@@ -166,6 +166,7 @@ eventos=cursor.execute(query1)
 client = Client(hostWWS, int(portWWS),timeout=15)
 evento_i={}
 ondaP=[]
+eventoSolito=[]
 for evento in eventos:
     estacion=evento[3]+'Z'
     evento_i.esta=estacion
@@ -173,9 +174,14 @@ for evento in eventos:
     time2=UTCDateTime(datenum_to_datetime(evento[14]))+55
     try:
         st = client.get_waveforms('TC',estacion,'99','HHZ',time1,time2)
+        st=st.filter(type='highpass',freq =0.8)
+        st.merge()
+        st=st.slice(UTCDateTime(time1),UTCDateTime(time2))
+        traza=st[0]
+        tracita=[traza.data,traza.times("timestamp")]
         #sacar data de st
-        yraw="evento.d"
-        evento_i.time="evento.t"
+        yraw=traza
+        evento_i.time=tracita
     except:
         pass
     if numpy.std(yraw)==0:
@@ -219,30 +225,52 @@ for evento in eventos:
             evento_i.onda_P=tP
             evento_i.onda_S=tS
             ondaP[i]=tP
-            #No se transformar esta linea de matlab a python
-            """ evento_i.snr=10*math.log10(abs(numpy.mean(y[iP+50:-100]math.pow())) """
+            evento_i.snr=10*math.log10(abs(numpy.mean(math.pow(y[iP+50:-100],2))))/numpy.mean(math.pow(y[101:iP-100],2))
             #transformar el .m de frecuencia
             evento_i.frec=""
             evento_i.amp=max(abs(yf))
     time.sleep(1)
-evento_i.volc=table1.volcan[i]
+    evento_i.volc=table1.volcan[i]
+    evento_i.code=table1.cod_event[i]
+    evento_i.crdt=table1.created_at(i)
+    evento_i.pk=table1.cod_event_in(i)
+    evento_i.coda=table1.fin(i)
+    evento_i.comp=chr(table1.componente[i])
+    evento_i.label=chr(table1.label_event[i])
+    evento_i.inicio=(table1.inicio(i))
+    eventoSolito[i]=evento_i
+if sum(hayTrazas)==0:
+    print("problema con trazas")
+#nose como pasar el datenum a python
+th=""
+ondaP_sorted=numpy.sort(ondaP,axis=1)
+i_sorted=numpy.argsort(ondaP,axis=1)
 
+filt_nan=i_sorted[numpy.sum(ondaP==0)+1:numpy.sum(numpy.isnan(ondaP))]
+#NO ENTIENDO ESE ":"
+eventoSolito_sorted[:]=eventoSolito[filt_nan]
+ondaP_sorted2[:]=ondaP[filt_nan]
 
+ondaP_sorted=ondaP_sorted2 
 
+i_estacion=numpy.full(len(estacion))
 
+k=0
+i=1
+macro=[]
+t_macro=[]
+while i<=len(eventoSolito_sorted):
+    t_in=ondaP_sorted[i]
+    if t_in>0:
+        t_th=t_in+th
+    k=k+1
+    while ondaP_sorted[i]<=t_th:
+       macro[i]=k
+       t_macro[i]=t_in 
+       i=i+1
+       if i>numpy.sum(numpy.isnan(ondaP_sorted)):
+        break
+    else:
+        i=i+1
 
-#filtro
-
-
-senal_f=butter_bandpass_lfilter(yraw,1,10,100)
-
-#usar senal_f para procesamiento a crear
-
-
-
-
-#############################################################################################################
-#Entra seccion rara de matlab#
-
-############################################################################################################
-
+rgb=

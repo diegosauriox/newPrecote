@@ -40,6 +40,7 @@ que2='SELECT cod_event FROM ufro_ovdas_v1.avistamiento_registro';
 que1=['SELECT * FROM ufro_ovdas_v1.identificacion_senal'...
    ' WHERE inicio BETWEEN ' num2str(inicio) ' AND ' num2str(fin) ...
    ' ORDER BY inicio ASC;'];
+  ###################################### 
 curs1=exec(conn,que1);
 if(isfield(curs1,'Message'))
    error(curs1.Message)
@@ -53,14 +54,18 @@ cod_event2=fetch(conn,que2);
 close(conn)
 %%
 table1=table1_all;
+//TABLA 1 tomar solo los que nos estan en la t2
 if height(cod_event2)>0
    im=ismember(cod_event1,cod_event2); %Eventos que ya están en tabla 2
    table1(im,:)=[];
 end
+
 if(height(table1)==0)
    error('Ya se analizaron los eventos correspondientes a ese periodo')
 end
+
 %%
+//filtro raro
 filtro = load('Filtro_pasabanda_1_10_orden10.mat');
 %% Leer trazas
 %% Leer BD y detección PS
@@ -76,6 +81,7 @@ for i=1:height(table1)
    estacion_i=char(estacion_(i));
    event_i.esta=estacion_i;
    %Leer trazas
+
    sac_name=table1.cod_event{i};
    sac_name=replace(sac_name,'.','_');
    sac_name=replace(sac_name,':','_');
@@ -88,6 +94,7 @@ for i=1:height(table1)
        yraw=0;
        event_i.time=0;
    end
+   //asignar p o s =0
    if std(yraw)==0
        event_i.onda_P=0;
        event_i.onda_S=0;
@@ -98,6 +105,7 @@ for i=1:height(table1)
        trazas_vacias=trazas_vacias+1;
    else
        hayTrazas(i)=1;
+       //preprocesamiento 
        [y_l,yf]=prePro(yraw,filtro,0);
        if length(y_l)>3000
            y=y_l(1:3000);
@@ -109,6 +117,7 @@ for i=1:height(table1)
            tS=0;
            event_i.onda_P=tP;
            event_i.onda_S=tS;
+           
            ondaP_(i)=nan;
            event_i.snr=  0;
            event_i.frec=0;
@@ -162,6 +171,7 @@ if sum(hayTrazas)==0
    error('Problema con trazas')
 end
 %% Reconocer macro-evento
+
 clear eventoSolito_sorted
 th=datenum(0,0,0,0,0,macro_sec); %4 segundos
 [ondaP_sorted,i_sorted]=sort(ondaP_);
