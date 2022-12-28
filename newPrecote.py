@@ -3,6 +3,7 @@ import math
 from obspy.clients.earthworm import Client
 from MySQL_comandos import *
 from datenum import *
+from datetime import datetime
 import os
 import time
 import mysql.connector
@@ -167,6 +168,7 @@ client = Client(hostWWS, int(portWWS),timeout=15)
 evento_i={}
 ondaP=[]
 eventoSolito=[]
+i=0
 for evento in eventos:
     estacion=evento[3]+'Z'
     evento_i.esta=estacion
@@ -229,6 +231,7 @@ for evento in eventos:
             #transformar el .m de frecuencia
             evento_i.frec=""
             evento_i.amp=max(abs(yf))
+    
     time.sleep(1)
     evento_i.volc=table1.volcan[i]
     evento_i.code=table1.cod_event[i]
@@ -239,6 +242,7 @@ for evento in eventos:
     evento_i.label=chr(table1.label_event[i])
     evento_i.inicio=(table1.inicio(i))
     eventoSolito[i]=evento_i
+    i=i+1
 if sum(hayTrazas)==0:
     print("problema con trazas")
 #nose como pasar el datenum a python
@@ -272,5 +276,98 @@ while i<=len(eventoSolito_sorted):
         break
     else:
         i=i+1
+#no entiendo desde linea 218 hasta 230
+rgb=numpy.random.rand(macro[-1],3)/2+5
+#####################################
+t_macro2=t_macro
+macro2=macro
+#what??
+filt_time=(t_macro2>=r_in & t_macro2<=r_fn)
+datos=eventoSolito_sorted[filt_time]
+t_macro=t_macro2[filt_time]
+macro=macro2[filt_time]
+cursor=mydb.cursor()
+lastMacro=0
 
-rgb=
+for i in len(1,datos,1):
+    PK=datos[iEv].pk
+    ID_Volcan=datos[iEv].volc
+    Est=datos[i].esta
+    Componente=datos[i].comp
+    #nose transformarlo linea 258
+    macro_event=strftime()
+    code_event=datos[i].code
+    ID_tecnica=1
+    #mismo de antes
+    Fecha_Pick=""
+    autor="4Testing2"
+    #same 
+    t_p=""
+    t_p[11]="T"
+    t_p[24]="Z"
+    t_p_c=t_p
+    #same
+    t_s=""
+    t_s[11]="T"
+    t_s[24]="Z"
+    t_s_c=t_s
+    c_p=0
+    c_s=0
+    c_coda=0
+    #same
+    inicio=""
+    snr=datos[i].snr
+    polar="nn"
+    #same
+    fecha_cr=""
+    descrip="Sinc comentarios"
+    lavel_event=datos[i].label
+    amplitud=datos[i].amp
+    #same
+    coda=""
+    #linea 290 no se que es
+    v_aux=""
+    #linea 291 tampoco se que es
+    v_aux2=v_aux[mack]
+    #cosa de fecha
+    coda2=""
+    frecuencia=datos[i].frec
+    stringAux=['''' code_event ''',' ...
+       num2str(PK) ',' ...
+       '''' macro_event ''',' ...
+       '''' T_P ''',' ...
+       '''' T_S ''',' ...
+       '''' coda ''',' ...
+       num2str(C_P) ',' ...
+       num2str(C_S) ',' ...
+       num2str(C_coda) ','...
+       '''' INICIO ''',' ...
+       '''' polar ''',' ...
+       num2str(frecuencia) ','...
+       num2str(Amplitud) ',' ...
+       '''' autor ''',' ...
+       '''' Label_event ''',' ...
+       '''' descrip ''',' ...
+       '''' Componente ''',' ...
+       num2str(SNR) ',' ...
+       num2str(ID_tecnica) ',' ...
+       '''' Fecha_Pick '''' ...
+       ]
+
+    stringAux_me=['''' macro_event '''' ',' ...
+       ID_Volcan ',' ...
+       '''XX'',' ...
+       '''' INICIO ''',' ...
+       '''' coda2 '''' ',' ...
+       num2str(0) ','...
+       num2str(0) ...
+       ]
+
+    query_me=['INSERT INTO ufro_ovdas_v1.evento_macro (evento_macro_id,volcan_id,clasificacion,inicio,fin,probabilidad,confiabilidad) VALUES (' stringAux_me  ');']
+    query_p=['INSERT INTO ufro_ovdas_v1.avistamiento_registro (cod_event,cod_event_in,evento_macro_id,t_p,t_s,coda,c_p,c_s,c_coda,inicio,polar,frecuencia,amplitud,autor,label_event,descripcion,componente,snr,tecnica_id,fecha_pick) VALUES (' stringAux ');']
+
+    if lastMacro<macro[i]:
+        curs3=cursor.execute(query_me)
+        lastMacro=macro[i]
+
+cursor.close()
