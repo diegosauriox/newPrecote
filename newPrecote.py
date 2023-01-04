@@ -9,10 +9,26 @@ import time
 import mysql.connector
 import numpy
 from scipy import signal
+from scipy.fft import fftshift
+from scipy.ndimage import gaussian_filter1d
 with open('conf.txt') as f:
     lines = f.readlines()
 i=0
-
+def frec_fun(yin):
+    Fs=100
+    T=1/Fs
+    L=len(yin)
+    if L%2>0:
+        L=L-1
+        y=yin[1:len(yin)-1]
+    else:
+        y=yin
+    Y=math.pow(abs(numpy.fft(y)),2)
+    P1=Y[1:L/2+1]
+    f=Fs*list(range(0,(L/2)+1))/L
+    m,i=P1.max(axis=1),P1.argmax(axis=1)
+    return f[i]
+    
 def ismember(d, k):
   return [1 if (i == k) else 0 for i in d]
 
@@ -41,9 +57,9 @@ def waveP(y):
 def waveS(y):
     fs=100
     f, t, Sxx = signal.spectrogram(y, fs,numpyerseg=300,noverlap=299)
-    S=pow(abs(Sxx),2)
+    S=math.pow(abs(Sxx),2)
 
-    Sn=(S-S.min())/(S.max()-S.min());
+    Sn=(S-S.min())/(S.max()-S.min())
     #Sn_db=10*numpy.log10(Sn);
     u=Sn.mean()
     B=Sn>=u
@@ -181,7 +197,6 @@ for evento in eventos:
         st=st.slice(UTCDateTime(time1),UTCDateTime(time2))
         traza=st[0]
         tracita=[traza.data,traza.times("timestamp")]
-        #sacar data de st
         yraw=traza
         evento_i.time=tracita
     except:
@@ -213,8 +228,8 @@ for evento in eventos:
             iP=waveP(y)
             iS=waveS(y)
             if iS<=iP:
-                #no me acuerdo si es ip:-1 o ip:
-                iS2=waveS(y[iP:])
+                
+                iS2=waveS(y[iP:len(y)])
                 iS=iS2+iP
             if iP>0:
                 tp=evento_i.time(iP)
@@ -228,8 +243,8 @@ for evento in eventos:
             evento_i.onda_S=tS
             ondaP[i]=tP
             evento_i.snr=10*math.log10(abs(numpy.mean(math.pow(y[iP+50:-100],2))))/numpy.mean(math.pow(y[101:iP-100],2))
-            #transformar el .m de frecuencia
-            evento_i.frec=""
+                
+            evento_i.frec=frec_fun(yf)
             evento_i.amp=max(abs(yf))
     
     time.sleep(1)
@@ -245,13 +260,14 @@ for evento in eventos:
     i=i+1
 if sum(hayTrazas)==0:
     print("problema con trazas")
-#nose como pasar el datenum a python
+#nose como pasar el datenum a python 176
 th=""
 ondaP_sorted=numpy.sort(ondaP,axis=1)
 i_sorted=numpy.argsort(ondaP,axis=1)
 
 filt_nan=i_sorted[numpy.sum(ondaP==0)+1:numpy.sum(numpy.isnan(ondaP))]
-#NO ENTIENDO ESE ":"
+#NO ENTIENDO ESE ":" linea 179
+
 eventoSolito_sorted[:]=eventoSolito[filt_nan]
 ondaP_sorted2[:]=ondaP[filt_nan]
 
@@ -290,8 +306,8 @@ cursor=mydb.cursor()
 lastMacro=0
 
 for i in len(1,datos,1):
-    PK=datos[iEv].pk
-    ID_Volcan=datos[iEv].volc
+    PK=datos[i].pk
+    ID_Volcan=datos[i].volc
     Est=datos[i].esta
     Componente=datos[i].comp
     #nose transformarlo linea 258
@@ -332,42 +348,15 @@ for i in len(1,datos,1):
     #cosa de fecha
     coda2=""
     frecuencia=datos[i].frec
-    stringAux=['''' code_event ''',' ...
-       num2str(PK) ',' ...
-       '''' macro_event ''',' ...
-       '''' T_P ''',' ...
-       '''' T_S ''',' ...
-       '''' coda ''',' ...
-       num2str(C_P) ',' ...
-       num2str(C_S) ',' ...
-       num2str(C_coda) ','...
-       '''' INICIO ''',' ...
-       '''' polar ''',' ...
-       num2str(frecuencia) ','...
-       num2str(Amplitud) ',' ...
-       '''' autor ''',' ...
-       '''' Label_event ''',' ...
-       '''' descrip ''',' ...
-       '''' Componente ''',' ...
-       num2str(SNR) ',' ...
-       num2str(ID_tecnica) ',' ...
-       '''' Fecha_Pick '''' ...
-       ]
+    stringAux=[code_event,str(PK),macro_event,t_p,t_s,coda,str(c_p),str(c_s),str(c_coda),inicio,polar,str(frecuencia),str(amplitud),lavel_event,descrip,Componente,str(snr),str(ID_tecnica),Fecha_Pick]
+    stringAux_me=[macro_event,ID_Volcan,"XX",inicio,coda2,str(0),str(0)]
 
-    stringAux_me=['''' macro_event '''' ',' ...
-       ID_Volcan ',' ...
-       '''XX'',' ...
-       '''' INICIO ''',' ...
-       '''' coda2 '''' ',' ...
-       num2str(0) ','...
-       num2str(0) ...
-       ]
 
-    query_me=['INSERT INTO ufro_ovdas_v1.evento_macro (evento_macro_id,volcan_id,clasificacion,inicio,fin,probabilidad,confiabilidad) VALUES (' stringAux_me  ');']
-    query_p=['INSERT INTO ufro_ovdas_v1.avistamiento_registro (cod_event,cod_event_in,evento_macro_id,t_p,t_s,coda,c_p,c_s,c_coda,inicio,polar,frecuencia,amplitud,autor,label_event,descripcion,componente,snr,tecnica_id,fecha_pick) VALUES (' stringAux ');']
+    query_me="INSERT INTO ufro_ovdas_v1.evento_macro (evento_macro_id,volcan_id,clasificacion,inicio,fin,probabilidad,confiabilidad) VALUES("+stringAux_me +");"
+    query_p='INSERT INTO ufro_ovdas_v1.avistamiento_registro (cod_event,cod_event_in,evento_macro_id,t_p,t_s,coda,c_p,c_s,c_coda,inicio,polar,frecuencia,amplitud,autor,label_event,descripcion,componente,snr,tecnica_id,fecha_pick) VALUES (' +stringAux +');'
 
     if lastMacro<macro[i]:
         curs3=cursor.execute(query_me)
         lastMacro=macro[i]
-
+    curs4=cursor.execute(query_p)
 cursor.close()

@@ -215,6 +215,7 @@ while i<=length(eventoSolito_sorted)
 end
 %{
 figure('menubar','none')
+//voy aca
 rgb=rand(macro(end),3)./2+.5;
 yyyy=etime(datevec(ondaP_sorted(end)),datevec(ondaP_sorted(1)))*[0 1 1 0];
 hold on
