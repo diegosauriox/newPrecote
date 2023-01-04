@@ -6,7 +6,7 @@ root
 pass=
 ovdas123
 db=
-ufro_ovdas_prueba4
+ufro_ovdas_prueba5
 host=
 172.16.45.39:3306
 
@@ -19,9 +19,9 @@ portWWS=
 Tiempos de analisis
 Fechas a analizar (formato yyyy-mm-dd HH:MM:SS.FFF):
 inicio=
-2022-03-02 00:00:00.000
+2021-08-01 00:00:00.000
 fin=
-2022-03-03 00:00:00.000
+2021-08-01 12:00:00.000
 Segundos para considerar un macro evento
 macro_sec=
 4

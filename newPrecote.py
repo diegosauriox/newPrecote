@@ -1,7 +1,7 @@
 from obspy import UTCDateTime
 import math
 from obspy.clients.earthworm import Client
-from MySQL_comandos import *
+from Mysql_comandos import *
 from datenum import *
 from datetime import datetime,timedelta
 import os
@@ -11,7 +11,8 @@ import numpy
 from scipy import signal
 from scipy.fft import fftshift
 from scipy.ndimage import gaussian_filter1d
-with open('conf.txt') as f:
+import configparser
+with open('C:/Users/diego/Desktop/ovdas pago informatico/newPrecote/conf.txt') as f:
     lines = f.readlines()
 i=0
 def vector2Vector(array,comparador):     
@@ -99,6 +100,20 @@ def waveS(y):
     return ts
 
 
+config = configparser.ConfigParser()
+config.read('C:/Users/diego/Desktop/ovdas pago informatico/newPrecote/conf2.conf')
+
+hostWWS=config["WWS"]["hostwws"]
+portWWS=config["WWS"]["portwws"]
+user=config["Database"]["user"]
+password=config["Database"]["password"]
+db=config["Database"]["db"]
+macro_sec=config["Data"]["macro_sec"]
+est_val=config["Data"]["est_val"]
+est_val=est_val.split(",")
+inicio=config["Data"]["inicio"]
+fin=config["Data"]["fin"]
+""" 
 while i<12:
     j=-1
     for line in lines:
@@ -136,18 +151,12 @@ while i<12:
         if line=="host=\n":
             host=lines[j+1][0:-1]
             i=i+1
+ """
 
-mydb = mysql.connector.connect(
-  host=host,
-  user=user,
-  password=password,
-  database=db
-)
-
-inicio2=datetime(inicio)-timedelta(minutes=1)
-fin2=datetime(fin)-timedelta(minutes=1)
-t1			=	UTCDateTime(t1)
-t2			=	UTCDateTime(t2)
+""" inicio2=datetime_to_datenum(inicio.strftime("%Y-%m-%d %H:%M:%S"))-timedelta(minutes=1)
+fin2=datetime(fin)-timedelta(minutes=1) """
+t1			=	UTCDateTime(inicio)
+t2			=	UTCDateTime(fin)
 tt1=t1-60
 tt2=t2+60
 ttt1=datetime_to_datenum(tt1.strftime("%Y-%m-%d %H:%M:%S"))
@@ -155,45 +164,25 @@ ttt2=datetime_to_datenum(tt2.strftime("%Y-%m-%d %H:%M:%S"))
 
 texto='select * from identificacion_senal where inicio between '+str(ttt1)+' AND '+str(ttt2)
 eventos=query(texto,visualizar='nones')
+
 client = Client(hostWWS, int(portWWS),timeout=15)
 
-query2='SELECT cod_event FROM ufro_ovdas_v1.avistamiento_registro;'
-query1='SELECT * FROM ufro_ovdas_v1.identificacion_senal WHERE inicio BETWEEN '+ str(inicio2) +' AND ' + str(fin2)+' ORDER BY inicio ASC;'
-
-cursor=mydb.cursor()
+query1='SELECT * FROM ufro_ovdas_prueba5.identificacion_senal WHERE inicio BETWEEN '+ str(ttt1) +' AND ' + str(ttt2)+' ORDER BY inicio ASC'
+table1=query(query1,visualizar="nones")
+""" cursor=mydb.cursor()
 data_query1=cursor.execute(query1)
-data_query2=cursor.execute(query2)
-code_event1=data_query1[:,1]
-code_event2=data_query2
-
 cursor.close()
-
-table1=data_query1
-
-if len(code_event2)>0:
-    im=ismember(code_event1,code_event2)
-    table1[im,:]=[]
+ """
+#table1=data_query1
 
 if len(table1)==0:
     print("Ya se analizaron los eventos correspondientes a ese periodo")
+print(table1)
 
-inicio=table1.inicio
+inicio=table1[2][3]
 estacion=table1.est
-hayTrazas=numpy.zeros(1,len(table1))
+hayTrazas=numpy.zeros(1,-1)
 trazas_vacias=0
-
-cursor=mydb.cursor()
-
-t1			=	UTCDateTime(t1)
-t2			=	UTCDateTime(t2)
-tt1=t1-60
-tt2=t2+60
-ttt1=datetime_to_datenum(tt1.strftime("%Y-%m-%d %H:%M:%S"))
-ttt2=datetime_to_datenum(tt2.strftime("%Y-%m-%d %H:%M:%S"))
-
-query1='select * from identificacion_senal where inicio between '+str(ttt1)+' AND '+str(ttt2)
-eventos=cursor.execute(query1)
-client = Client(hostWWS, int(portWWS),timeout=15)
 evento_i={}
 ondaP=[]
 eventoSolito=[]
@@ -313,7 +302,7 @@ filt_time=(t_macro2>=inicio & t_macro2<=fin)
 datos=eventoSolito_sorted[filt_time]
 t_macro=t_macro2[filt_time]
 macro=macro2[filt_time]
-cursor=mydb.cursor()
+
 lastMacro=0
 
 for i in len(1,datos,1):
@@ -362,7 +351,7 @@ for i in len(1,datos,1):
     stringAux=[code_event,str(PK),macro_event,t_p,t_s,coda,str(c_p),str(c_s),str(c_coda),inicio,polar,str(frecuencia),str(amplitud),lavel_event,descrip,Componente,str(snr),str(ID_tecnica),Fecha_Pick]
     stringAux_me=[macro_event,ID_Volcan,"XX",inicio,coda2,str(0),str(0)]
 
-
+""" 
     query_me="INSERT INTO ufro_ovdas_v1.evento_macro (evento_macro_id,volcan_id,clasificacion,inicio,fin,probabilidad,confiabilidad) VALUES("+stringAux_me +");"
     query_p='INSERT INTO ufro_ovdas_v1.avistamiento_registro (cod_event,cod_event_in,evento_macro_id,t_p,t_s,coda,c_p,c_s,c_coda,inicio,polar,frecuencia,amplitud,autor,label_event,descripcion,componente,snr,tecnica_id,fecha_pick) VALUES (' +stringAux +');'
 
@@ -370,4 +359,4 @@ for i in len(1,datos,1):
         curs3=cursor.execute(query_me)
         lastMacro=macro[i]
     curs4=cursor.execute(query_p)
-cursor.close()
+cursor.close() """
