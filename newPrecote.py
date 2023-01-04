@@ -3,7 +3,7 @@ import math
 from obspy.clients.earthworm import Client
 from MySQL_comandos import *
 from datenum import *
-from datetime import datetime
+from datetime import datetime,timedelta
 import os
 import time
 import mysql.connector
@@ -14,6 +14,18 @@ from scipy.ndimage import gaussian_filter1d
 with open('conf.txt') as f:
     lines = f.readlines()
 i=0
+def vector2Vector(array,comparador):     
+    vector2=[]  
+    for item in array: 
+        if item==comparador: 
+            vector2.append(comparador) 
+    return vector2
+def matriz2Vector(matriz):
+    vector=[]
+    for i in range(len(matriz[0])):
+        for item in matriz:
+            vector.append(item[i])
+    return vector
 def frec_fun(yin):
     Fs=100
     T=1/Fs
@@ -132,7 +144,8 @@ mydb = mysql.connector.connect(
   database=db
 )
 
-
+inicio2=datetime(inicio)-timedelta(minutes=1)
+fin2=datetime(fin)-timedelta(minutes=1)
 t1			=	UTCDateTime(t1)
 t2			=	UTCDateTime(t2)
 tt1=t1-60
@@ -145,7 +158,7 @@ eventos=query(texto,visualizar='nones')
 client = Client(hostWWS, int(portWWS),timeout=15)
 
 query2='SELECT cod_event FROM ufro_ovdas_v1.avistamiento_registro;'
-query1='SELECT * FROM ufro_ovdas_v1.identificacion_senal WHERE inicio BETWEEN '+ str(inicio) +' AND ' + str(fin)+' ORDER BY inicio ASC;'
+query1='SELECT * FROM ufro_ovdas_v1.identificacion_senal WHERE inicio BETWEEN '+ str(inicio2) +' AND ' + str(fin2)+' ORDER BY inicio ASC;'
 
 cursor=mydb.cursor()
 data_query1=cursor.execute(query1)
@@ -220,7 +233,7 @@ for evento in eventos:
             tS=0
             evento_i.onda_P=tP
             evento_i.onda_S=tS
-            ondaP[i]=""
+            ondaP[i]=math.nan
             evento_i.snr=0
             evento_i.frec=0
             evento_i.amp=max(abs(yf))
@@ -260,16 +273,14 @@ for evento in eventos:
     i=i+1
 if sum(hayTrazas)==0:
     print("problema con trazas")
-#nose como pasar el datenum a python 176
-th=""
+th=timedelta(seconds=macro_sec)
 ondaP_sorted=numpy.sort(ondaP,axis=1)
 i_sorted=numpy.argsort(ondaP,axis=1)
 
 filt_nan=i_sorted[numpy.sum(ondaP==0)+1:numpy.sum(numpy.isnan(ondaP))]
 #NO ENTIENDO ESE ":" linea 179
-
-eventoSolito_sorted[:]=eventoSolito[filt_nan]
-ondaP_sorted2[:]=ondaP[filt_nan]
+eventoSolito_sorted=matriz2Vector(eventoSolito[filt_nan])
+ondaP_sorted2=matriz2Vector(ondaP[filt_nan])
 
 ondaP_sorted=ondaP_sorted2 
 
@@ -293,12 +304,12 @@ while i<=len(eventoSolito_sorted):
     else:
         i=i+1
 #no entiendo desde linea 218 hasta 230
-rgb=numpy.random.rand(macro[-1],3)/2+5
+ #se omite parte gráfica
 #####################################
 t_macro2=t_macro
 macro2=macro
 #what??
-filt_time=(t_macro2>=r_in & t_macro2<=r_fn)
+filt_time=(t_macro2>=inicio & t_macro2<=fin)
 datos=eventoSolito_sorted[filt_time]
 t_macro=t_macro2[filt_time]
 macro=macro2[filt_time]
@@ -311,19 +322,19 @@ for i in len(1,datos,1):
     Est=datos[i].esta
     Componente=datos[i].comp
     #nose transformarlo linea 258
-    macro_event=strftime()
+    macro_event=datetime(t_macro[i]).strftime('%Y%m%d_%H%M%S.%f')[:-3]
     code_event=datos[i].code
     ID_tecnica=1
     #mismo de antes
-    Fecha_Pick=""
+    Fecha_Pick=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
     autor="4Testing2"
     #same 
-    t_p=""
+    t_p=datetime(datos[i].onda_P,'%Y-%m-%d %H:%M:%S.%f')
     t_p[11]="T"
     t_p[24]="Z"
     t_p_c=t_p
     #same
-    t_s=""
+    t_s=datetime(datos[i].onda_S,'%Y-%m-%d %H:%M:%S.%f')
     t_s[11]="T"
     t_s[24]="Z"
     t_s_c=t_s
@@ -331,22 +342,22 @@ for i in len(1,datos,1):
     c_s=0
     c_coda=0
     #same
-    inicio=""
+    inicio=datetime(datos[i].inicio,'%Y-%m-%d %H:%M:%S.%f')
     snr=datos[i].snr
     polar="nn"
     #same
-    fecha_cr=""
+    fecha_cr=datetime(datos[i].crdt,'%Y-%m-%d %H:%M:%S.%f')
     descrip="Sinc comentarios"
     lavel_event=datos[i].label
     amplitud=datos[i].amp
     #same
-    coda=""
+    coda=datetime(datos[i].coda,'%Y-%m-%d %H:%M:%S.%f')
     #linea 290 no se que es
-    v_aux=""
+    v_aux=list(range(1,len(macro)+1))
     #linea 291 tampoco se que es
-    v_aux2=v_aux[mack]
+    v_aux2=vector2Vector(v_aux,macro[i])
     #cosa de fecha
-    coda2=""
+    coda2=datetime(datos[v_aux2[-1]].coda,'%Y-%m-%d %H:%M:%S.%f')
     frecuencia=datos[i].frec
     stringAux=[code_event,str(PK),macro_event,t_p,t_s,coda,str(c_p),str(c_s),str(c_coda),inicio,polar,str(frecuencia),str(amplitud),lavel_event,descrip,Componente,str(snr),str(ID_tecnica),Fecha_Pick]
     stringAux_me=[macro_event,ID_Volcan,"XX",inicio,coda2,str(0),str(0)]
